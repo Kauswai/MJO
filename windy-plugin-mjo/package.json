@@ -1,0 +1,30 @@
+{
+    "name": "windy-plugin-mjo",
+    "version": "1.0.0",
+    "description": "Windy plugin: MJO RMM phase diagram, map envelope and GEFS ensemble forecast",
+    "main": "dist/plugin.min.js",
+    "type": "module",
+    "scripts": {
+        "build": "rm -rf dist && mkdir dist && SERVE=false rollup -c && cp package.json dist/",
+        "build:win": "(if exist dist rmdir /s /q dist) && mkdir dist && set SERVE=false&& rollup -c && copy package.json dist\\",
+        "start": "rollup -w -c",
+        "data": "python pipeline/mjo_pipeline.py --out public/mjo.json --cache .cache"
+    },
+    "keywords": [
+        "windy",
+        "windy.com",
+        "plugins",
+        "mjo",
+        "madden-julian-oscillation",
+        "rmm"
+    ],
+    "author": "Kauswai",
+    "license": "ISC",
+    "homepage": "https://docs.windy-plugins.com/",
+    "dependencies": {
+        "@windycom/plugin-devtools": "^3.0.3"
+    },
+    "overrides": {
+        "@swc/core": "1.15.47"
+    }
+}
