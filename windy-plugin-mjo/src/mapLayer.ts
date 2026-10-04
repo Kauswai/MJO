@@ -58,6 +58,26 @@ const rect = (lat0: number, lat1: number, lon0: number, lon1: number): L.LatLngE
     ],
 ];
 
+/** Small round HTML marker; unlike Leaflet GL circle markers these support tooltips */
+const dot = (
+    latlng: L.LatLngExpression,
+    size: number,
+    fill: string,
+    border: string,
+    opacity: number,
+    tooltip: string,
+): L.Marker =>
+    new L.Marker(latlng, {
+        icon: new L.DivIcon({
+            className: 'mjo-map-label-icon',
+            html:
+                `<div class="mjo-dot" style="width:${size}px;height:${size}px;` +
+                `background:${fill};border-color:${border};opacity:${opacity}"></div>`,
+            iconSize: [size, size],
+            iconAnchor: [size / 2, size / 2],
+        }),
+    }).bindTooltip(tooltip);
+
 export class MjoMapLayer {
     private group: L.LayerGroup;
 
@@ -80,6 +100,15 @@ export class MjoMapLayer {
      * @param track  ensemble-mean states from the latest analysis through the forecast
      */
     render(state: MjoState | null, track: MjoState[], opts: MapRenderOptions): void {
+        try {
+            this.draw(state, track, opts);
+        } catch (e) {
+            // a drawing problem must never break the plugin pane
+            console.error('windy-plugin-mjo: map overlay failed', e);
+        }
+    }
+
+    private draw(state: MjoState | null, track: MjoState[], opts: MapRenderOptions): void {
         this.clear();
 
         if (opts.showSectors || opts.highlightPhase) {
@@ -141,7 +170,8 @@ export class MjoMapLayer {
                         interactive: i === 2,
                     });
                     if (i === 2) {
-                        poly.bindTooltip(`${label}<br>${tooltip}`, { sticky: true });
+                        // Leaflet GL vector layers support popups, not tooltips
+                        poly.bindPopup(`${label}<br>${tooltip}`);
                     }
                     this.add(poly);
                 });
@@ -201,20 +231,18 @@ export class MjoMapLayer {
             );
             track.forEach((s, i) => {
                 const selected = s.date === selectedDate;
-                const marker = new L.CircleMarker([lat, lons[i] + offset], {
-                    radius: selected ? 6 : 4,
-                    color: selected ? '#ffffff' : TRACK_COLOR,
-                    weight: selected ? 2 : 1,
-                    fill: true,
-                    fillColor: s.kind === 'forecast' ? TRACK_COLOR : ENHANCED_COLOR,
-                    fillOpacity: 0.95,
-                });
                 const lead = firstForecast >= 0 && i >= firstForecast ? i - firstForecast : null;
-                marker.bindTooltip(
-                    `${formatDate(s.date)}${lead !== null ? ` (day +${lead})` : ' (analysis)'}<br>` +
-                        `Phase ${phaseOf(s.x, s.y)}, amplitude ${amplitude(s.x, s.y).toFixed(2)}`,
+                this.add(
+                    dot(
+                        [lat, lons[i] + offset],
+                        selected ? 12 : 8,
+                        s.kind === 'forecast' ? TRACK_COLOR : ENHANCED_COLOR,
+                        selected ? '#ffffff' : TRACK_COLOR,
+                        1,
+                        `${formatDate(s.date)}${lead !== null ? ` (day +${lead})` : ' (analysis)'}<br>` +
+                            `Phase ${phaseOf(s.x, s.y)}, amplitude ${amplitude(s.x, s.y).toFixed(2)}`,
+                    ),
                 );
-                this.add(marker);
             });
         }
     }
@@ -225,19 +253,16 @@ export class MjoMapLayer {
                 const lon = unwrapTo(convectionLon(x, y), 0) + offset;
                 // spread the dots a little in latitude so overlapping members stay visible
                 const lat = -6 + ((i * 7) % 13);
-                const m = new L.CircleMarker([lat, lon], {
-                    radius: 3,
-                    color: MEMBER_COLOR,
-                    weight: 1,
-                    opacity: isActive(x, y) ? 0.9 : 0.4,
-                    fill: true,
-                    fillColor: isActive(x, y) ? ENHANCED_COLOR : '#888888',
-                    fillOpacity: 0.8,
-                });
-                m.bindTooltip(
-                    `Member ${i === 0 ? 'control' : i}: phase ${phaseOf(x, y)}, amp ${amplitude(x, y).toFixed(2)}`,
+                this.add(
+                    dot(
+                        [lat, lon],
+                        6,
+                        isActive(x, y) ? ENHANCED_COLOR : '#888888',
+                        MEMBER_COLOR,
+                        isActive(x, y) ? 0.9 : 0.5,
+                        `Member ${i === 0 ? 'control' : i}: phase ${phaseOf(x, y)}, amp ${amplitude(x, y).toFixed(2)}`,
+                    ),
                 );
-                this.add(m);
             });
         }
     }

@@ -530,6 +530,11 @@
         font-size: 10px;
         padding: 1px 6px;
     }
+    :global(.mjo-dot) {
+        box-sizing: border-box;
+        border: 1px solid;
+        border-radius: 50%;
+    }
     :global(.mjo-sector-label) {
         width: 24px;
         height: 24px;
