@@ -94,6 +94,7 @@ see <https://docs.windy-plugins.com/>). Optionally add `src/screenshot.jpg` for 
 | `pipeline/mjo_pipeline.py` | daily job → `mjo.json` |
 | `pipeline/calibrate.py` | fits `calibration.json` against BoM RMM (run once) |
 | `pipeline/calibration.json` | fitted 2×2 matrix (EOF projections → RMM) |
+| `pipeline/climatology.npz` | 1991–2020 daily climatology (15°S–15°N), committed so runs don't re-download it |
 | `../.github/workflows/update-mjo-data.yml` | schedule + GitHub Pages deploy |
 
 ```bash
@@ -104,7 +105,8 @@ python pipeline/mjo_pipeline.py --out public/mjo.json --cache .cache
 ## Data sources & credits
 
 - NOAA/NCEP **GEFS** via the [NOAA Open Data Dissemination program on AWS](https://registry.opendata.aws/noaa-gefs/)
-- NOAA **CPC blended OLR** and NCEP/NCAR reanalysis climatology, from NOAA PSL
+- NOAA **CPC blended OLR** and NCEP/NCAR reanalysis climatology, from NOAA PSL (read from `downloads.psl.noaa.gov` with HTTP range
+  requests — PSL's OPeNDAP service rate-limits GitHub's runners with HTTP 429)
 - RMM EOFs: [`pyMTDG`](https://github.com/MJO-Teleconnection-Diagnostics/pyMTDG) `MJO/ceof.nc`
   (downloaded at run time, not redistributed)
 - Official RMM series: Australian Bureau of Meteorology

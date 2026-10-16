@@ -2,3 +2,6 @@ numpy>=2.0
 requests>=2.31
 eccodes>=2.37
 netCDF4>=1.7
+h5py>=3.11
+fsspec>=2024.6
+aiohttp>=3.9
